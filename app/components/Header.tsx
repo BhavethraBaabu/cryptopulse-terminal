@@ -16,6 +16,7 @@ const Header = () => {
                     <Link href="/" className={cn('nav-link', { 'is-active': path === '/', 'is-home': true })}>Home</Link>
                     <div className="nav-link cursor-default">Search Model</div>
                     <Link href="/coins" className={cn('nav-link', { 'is-active': path === '/coins' })}>All Coins</Link>
+                    <Link href="/login" className={cn('nav-link', { 'is-active': path === '/login' })}>Login</Link>
                 </nav>
             </div>
         </header>
