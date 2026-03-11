@@ -11,8 +11,15 @@
   "dependencies": {
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+<<<<<<< HEAD
     "lucide-react": "^0.575.0",
     "next": "16.1.6",
+=======
+    "lightweight-charts": "^5.1.0",
+    "lucide-react": "^0.575.0",
+    "next": "16.1.6",
+    "query-string": "^9.3.1",
+>>>>>>> fbb0e69 (candle stick chart added)
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
