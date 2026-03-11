@@ -37,17 +37,16 @@ const page = () => {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Trending Section */}
-        <div className="w-full space-y-4">
-          <p>Trending Crypto Coins</p>
-
-          <section className="w-full mt-10 space-y-3">
+          {/* 👇 MOVE CHART HERE */}
+          <section className="w-full mt-6 space-y-3">
             <p className="text-lg font-semibold">Bitcoin Price Chart</p>
             <CandlestickChart />
           </section>
+
         </div>
+
+        <p>Trending Crypto Coins</p>
 
       </section>
 
@@ -63,5 +62,4 @@ const page = () => {
     </main>
   )
 }
-
 export default page
