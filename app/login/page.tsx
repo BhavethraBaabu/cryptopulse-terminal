@@ -89,7 +89,7 @@ const LoginPage = () => {
 
                 {/* Footer */}
                 <p className="text-center text-purple-100">
-                    Don&apos;t have an account?{' '}
+                    Don't have an account?{' '}
                     <Link href="#" className="font-semibold text-green-500 hover:text-green-400 transition-colors">
                         Create one now
                     </Link>

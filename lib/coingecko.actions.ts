@@ -2,8 +2,8 @@
 
 import qs from 'query-string';
 
-const BASE_URL = 'https://api.coingecko.com/api/v3/';
-const API_KEY = "CG-a41FCVCXUpUgz2fhe7hMLBGB";
+const BASE_URL = process.env.COINGECKO_BASE_URL;
+const API_KEY = process.env.COINGECKO_API_KEY;
 
 if (!BASE_URL || !API_KEY) {
     throw new Error('Missing environment variables');
@@ -11,25 +11,52 @@ if (!BASE_URL || !API_KEY) {
 
 export async function fetcher<T>(
     endpoint: string,
-    params?: QueryParams,
+    params?: Record<string, any>,
     revalidate = 60,
 ): Promise<T> {
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
     const url = qs.stringifyUrl({
-        url: `${BASE_URL}/${endpoint}`,
+        url: `${BASE_URL}/${cleanEndpoint}`,
         query: params
     }, { skipEmptyString: true, skipNull: true })
 
-    const response = await fetch(url, {
+    const isPro = BASE_URL?.includes('pro-api');
+    const apiKeyHeader = isPro ? 'x-cg-pro-api-key' : 'x-cg-demo-api-key';
+
+    let response = await fetch(url, {
         headers: {
-            "x-cg-demo-api-key": API_KEY,
+            [apiKeyHeader]: API_KEY,
             "Content-Type": "application/json",
         } as Record<string, string>,
         next: { revalidate }
+    });
+
+    // Smart Fallback: If Pro API key fails with 400, 401 or 403, and they are using pro URL, 
+    // seamlessly downgrade to the public demo URL to save the application.
+    if (!response.ok && (response.status === 400 || response.status === 401 || response.status === 403) && isPro) {
+        console.warn(`CoinGecko Pro API failed (${response.status}). Retrying with public Demo API...`);
+        const fallbackUrl = qs.stringifyUrl({
+            url: `https://api.coingecko.com/api/v3/${cleanEndpoint}`,
+            query: params
+        }, { skipEmptyString: true, skipNull: true });
+
+        response = await fetch(fallbackUrl, {
+            headers: {
+                'x-cg-demo-api-key': API_KEY,
+                "Content-Type": "application/json",
+            } as Record<string, string>,
+            next: { revalidate }
+        });
     }
-    )
+
     if (!response.ok) {
-        const errorBody: CoinGeckoErrorBody = await response.json().catch(() => ({}))
-        throw new Error(errorBody.error || `API Error: ${response.status}`)
+        let errorMsg = `API Error: ${response.status}`;
+        try {
+            const errorBody = await response.json();
+            if (errorBody.error) errorMsg = errorBody.error;
+        } catch (e) {}
+        throw new Error(errorMsg);
     }
+    
     return response.json()
 }
