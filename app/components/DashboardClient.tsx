@@ -101,7 +101,7 @@ export default function DashboardClient({
 
   return (
     <section className="home-grid">
-      <div id="coin-overview" className="w-full h-full xl:col-span-2">
+      <div id="coin-overview" className="w-full h-full xl:col-span-2 flex flex-col">
         <CandlestickChart
           coinId={coin.id}
           coinName={coin.name}
@@ -109,6 +109,7 @@ export default function DashboardClient({
           coinImage={coin.image.large}
           currentPrice={liveChartPrice}
           initialData={ohlcData.length > 0 ? ohlcData : []}
+          className="flex-1"
         >
           <div className="header pt-2">
             <Image src={coin.image.large} alt={coin.name} width={56} height={56} className="bg-dark-400 rounded-full" />

@@ -21,7 +21,7 @@ export default function LiveTradeFeed({ coinId }: { coinId: string }) { // coinI
     const symbol = coinId.toLowerCase().endsWith('usdt') ? coinId.toLowerCase() : `${coinId.toLowerCase()}usdt`;
     
     // Connect to Binance Native Trade Stream
-    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol}@trade`);
+    const ws = new WebSocket(`wss://stream.binance.us:9443/ws/${symbol}@trade`);
     wsRef.current = ws;
 
     ws.onmessage = (event) => {
@@ -68,7 +68,7 @@ export default function LiveTradeFeed({ coinId }: { coinId: string }) { // coinI
                     {trade.direction === 'buy' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
                     {trade.direction.toUpperCase()}
                   </span>
-                  <span className="text-xs text-gray-400">{new Date(trade.timestamp).toLocaleTimeString()}</span>
+                  <span className="text-xs text-gray-400">{new Date(trade.timestamp).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour12: false })} EST</span>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-medium text-white">${trade.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}</div>

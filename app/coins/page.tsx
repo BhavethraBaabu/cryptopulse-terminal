@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { TrendingUp, TrendingDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import DataTable from '@/app/components/DataTable';
+import CoinIcon from '@/app/components/CoinIcon';
 
 export default async function AllCoinsPage({
   searchParams,
@@ -16,7 +17,7 @@ export default async function AllCoinsPage({
 
   let data: any[] = [];
   try {
-    const res = await fetch('https://api.binance.com/api/v3/ticker/24hr', { next: { revalidate: 60 } });
+    const res = await fetch('https://api.binance.us/api/v3/ticker/24hr', { next: { revalidate: 60 } });
     const tickers = await res.json();
     
     if (Array.isArray(tickers)) {
@@ -54,7 +55,9 @@ export default async function AllCoinsPage({
         return (
           <div className="token-info">
             <Link href={`/coins/${coin.symbol}`} className="absolute inset-0 z-10" aria-label="View coin" />
-            <div className="w-9 h-9 rounded-full bg-dark-400 flex items-center justify-center text-xs font-bold shadow-md border border-white/5">{symbol[0]}</div>
+            <div className="w-9 h-9 rounded-full bg-dark-400 flex items-center justify-center text-xs font-bold shadow-md border border-white/5 relative overflow-hidden flex-shrink-0">
+               <CoinIcon symbol={symbol} className="w-full h-full object-contain p-1.5 z-10" />
+            </div>
             <p>
               {symbol} ({symbol})
             </p>

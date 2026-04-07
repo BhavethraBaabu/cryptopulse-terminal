@@ -16,14 +16,13 @@ export function useLivePrices(coinIds: string[]) {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        // Ping/Pong Heartbeat to keep connection alive if needed
+        // Ping/Pong Heartbeat 
         pingInterval = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
-            // CoinCap doesn't strict require ping for this stream, but sending a harmless payload 
-            // keeps proxy/firewalls from dropping idle persistent connections
+            
             ws.send(JSON.stringify({ type: "ping" }));
           }
-        }, 30000); // every 30 seconds
+        }, 30000); 
       };
 
       ws.onmessage = (event) => {
@@ -35,7 +34,6 @@ export function useLivePrices(coinIds: string[]) {
           }
           setPrices(prev => ({ ...prev, ...newPrices }));
         } catch (e) {
-          // Ignore parse errors from ping rejections etc
         }
       };
 
@@ -56,7 +54,7 @@ export function useLivePrices(coinIds: string[]) {
       clearTimeout(reconnectTimeout);
       clearInterval(pingInterval);
       if (wsRef.current) {
-        wsRef.current.onclose = null; // prevent reconnect loop on unmount
+        wsRef.current.onclose = null; 
         wsRef.current.close();
       }
     };

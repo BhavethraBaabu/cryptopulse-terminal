@@ -20,8 +20,8 @@ const COIN_METADATA: Record<string, { id: string, name: string, image: string }>
 const page = async () => {
   let ohlcData: { x: number, y: number[] }[] = [];
   try {
-    const response = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=24', { next: { revalidate: 60 } });
-    if (!response.ok) throw new Error("Failed to fetch klines from binance.com");
+    const response = await fetch('https://api.binance.us/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=60', { next: { revalidate: 60 } });
+    if (!response.ok) throw new Error("Failed to fetch klines from binance.us");
     const rawOhlc = await response.json();
     
     if (Array.isArray(rawOhlc)) {
@@ -37,8 +37,8 @@ const page = async () => {
   let trendingCoins: any[] = [];
   try {
     const querySymbols = JSON.stringify(SYMBOLS);
-    const response = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${querySymbols}`, { next: { revalidate: 60 } });
-    if (!response.ok) throw new Error("Failed to fetch ticker from binance.com");
+    const response = await fetch(`https://api.binance.us/api/v3/ticker/24hr?symbols=${querySymbols}`, { next: { revalidate: 60 } });
+    if (!response.ok) throw new Error("Failed to fetch ticker from binance.us");
     const marketsData = await response.json();
 
     if (Array.isArray(marketsData)) {

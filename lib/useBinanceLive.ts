@@ -9,7 +9,7 @@ export function useBinanceLive(symbols: string[]) {
     
     // Create combined stream URL
     const streams = symbols.map(s => `${s.toLowerCase()}@ticker`).join('/');
-    const url = `wss://stream.binance.com:9443/stream?streams=${streams}`;
+    const url = `wss://stream.binance.us:9443/stream?streams=${streams}`;
     
     let reconnectTimeout: ReturnType<typeof setTimeout>;
     
