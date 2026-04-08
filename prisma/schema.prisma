@@ -1,0 +1,110 @@
+// Prisma schema – covers all phases of CoinPulse
+// Phase B: Watchlist  |  Phase C: Portfolio  |  Phase D: Alerts  |  Phase G: Paper Trading
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Phase B: Watchlist ───────────────────────────────────────────────────────
+
+model Watchlist {
+  id          String   @id @default(cuid())
+  clerkUserId String
+  coinSymbol  String   // e.g. "BTCUSDT"
+  coinName    String   @default("")
+  addedAt     DateTime @default(now())
+
+  @@unique([clerkUserId, coinSymbol])
+  @@index([clerkUserId])
+}
+
+// ─── Phase C: Portfolio ───────────────────────────────────────────────────────
+
+model Portfolio {
+  id          String     @id @default(cuid())
+  clerkUserId String     @unique
+  positions   Position[]
+  createdAt   DateTime   @default(now())
+}
+
+model Position {
+  id           String    @id @default(cuid())
+  portfolio    Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  portfolioId  String
+  coinSymbol   String    // e.g. "BTCUSDT"
+  coinName     String    @default("")
+  quantity     Float
+  avgBuyPrice  Float
+  buyDate      DateTime
+  notes        String    @default("")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([portfolioId])
+}
+
+// ─── Phase D: Price Alerts ────────────────────────────────────────────────────
+
+model PriceAlert {
+  id          String   @id @default(cuid())
+  clerkUserId String
+  coinSymbol  String
+  coinName    String   @default("")
+  condition   String   // "above" | "below"
+  targetPrice Float
+  triggered   Boolean  @default(false)
+  triggeredAt DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([clerkUserId])
+  @@index([triggered])
+}
+
+// ─── Phase G: Paper Trading ───────────────────────────────────────────────────
+
+model VirtualWallet {
+  id              String            @id @default(cuid())
+  clerkUserId     String            @unique
+  balance         Float             @default(100000)  // USDT remaining
+  startingBalance Float             @default(100000)
+  resetCount      Int               @default(0)
+  trades          VirtualTrade[]
+  positions       VirtualPosition[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+model VirtualTrade {
+  id            String        @id @default(cuid())
+  wallet        VirtualWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  walletId      String
+  coinSymbol    String
+  coinName      String        @default("")
+  side          String        // "buy" | "sell"
+  quantity      Float
+  executedPrice Float
+  fee           Float         // 0.1% of total
+  total         Float         // quantity * executedPrice ± fee
+  timestamp     DateTime      @default(now())
+
+  @@index([walletId])
+}
+
+model VirtualPosition {
+  id            String        @id @default(cuid())
+  wallet        VirtualWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  walletId      String
+  coinSymbol    String
+  coinName      String        @default("")
+  quantity      Float
+  avgEntryPrice Float
+
+  @@unique([walletId, coinSymbol])
+  @@index([walletId])
+}

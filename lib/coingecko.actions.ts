@@ -60,3 +60,26 @@ export async function fetcher<T>(
     
     return response.json()
 }
+
+/** Search CoinGecko for a coin by symbol/name. Returns null on failure. */
+export async function searchCoin(query: string): Promise<{
+  coins: Array<{ id: string; symbol: string; name: string; thumb: string; market_cap_rank: number | null }>;
+} | null> {
+  try {
+    return await fetcher('/search', { query }, 3600);
+  } catch {
+    return null;
+  }
+}
+
+/** Fetch full coin details from CoinGecko by CoinGecko coin ID (e.g. "bitcoin"). */
+export async function getCoinDetails(coinId: string) {
+  return fetcher<any>(`/coins/${coinId}`, {
+    localization: false,
+    tickers: false,
+    market_data: true,
+    community_data: false,
+    developer_data: false,
+    sparkline: false,
+  }, 60);
+}

@@ -6,77 +6,70 @@ import { TrendingUp, TrendingDown } from 'lucide-react';
 import DataTable from '@/app/components/DataTable';
 import { cn } from '@/lib/utils';
 
-// Use Binance symbols for free public queries
-const SYMBOLS = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"];
+const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT'];
 
-const COIN_METADATA: Record<string, { id: string, name: string, image: string }> = {
-  "BTCUSDT": { id: "bitcoin", name: "Bitcoin", image: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png" },
-  "ETHUSDT": { id: "ethereum", name: "Ethereum", image: "https://assets.coingecko.com/coins/images/279/large/ethereum.png" },
-  "BNBUSDT": { id: "binancecoin", name: "BNB", image: "https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png" },
-  "SOLUSDT": { id: "solana", name: "Solana", image: "https://assets.coingecko.com/coins/images/4128/large/solana.png" },
-  "XRPUSDT": { id: "ripple", name: "XRP", image: "https://assets.coingecko.com/coins/images/44/large/xrp-symbol-white-128.png" }
+const COIN_METADATA: Record<string, { id: string; name: string; image: string }> = {
+  BTCUSDT: { id: 'bitcoin', name: 'Bitcoin', image: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png' },
+  ETHUSDT: { id: 'ethereum', name: 'Ethereum', image: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png' },
+  BNBUSDT: { id: 'binancecoin', name: 'BNB', image: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png' },
+  SOLUSDT: { id: 'solana', name: 'Solana', image: 'https://assets.coingecko.com/coins/images/4128/large/solana.png' },
+  XRPUSDT: { id: 'ripple', name: 'XRP', image: 'https://assets.coingecko.com/coins/images/44/large/xrp-symbol-white-128.png' },
 };
 
 const page = async () => {
-  let ohlcData: { x: number, y: number[] }[] = [];
-  try {
-    const response = await fetch('https://api.binance.us/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=60', { next: { revalidate: 60 } });
-    if (!response.ok) throw new Error("Failed to fetch klines from binance.us");
-    const rawOhlc = await response.json();
-    
-    if (Array.isArray(rawOhlc)) {
-      ohlcData = rawOhlc.map((point: any[]) => ({
-        x: point[0], // timestamp Open
-        y: [parseFloat(point[1]), parseFloat(point[2]), parseFloat(point[3]), parseFloat(point[4])] // O, H, L, C
-      }));
-    }
-  } catch (error) {
-    console.error("Failed to fetch klines:", error);
-  }
+  // Parallel data fetching – eliminates request waterfalls
+  const [ohlcResult, tickersResult, categoriesResult] = await Promise.allSettled([
+    fetch('https://api.binance.us/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=60', {
+      next: { revalidate: 60 },
+    }).then((r) => (r.ok ? r.json() : [])),
 
+    fetch(`https://api.binance.us/api/v3/ticker/24hr?symbols=${JSON.stringify(SYMBOLS)}`, {
+      next: { revalidate: 60 },
+    }).then((r) => (r.ok ? r.json() : [])),
+
+    fetcher<any[]>('/coins/categories').catch(() => []),
+  ]);
+
+  // Process OHLC data
+  const rawOhlc = ohlcResult.status === 'fulfilled' ? ohlcResult.value : [];
+  const ohlcData: { x: number; y: number[] }[] = Array.isArray(rawOhlc)
+    ? rawOhlc.map((point: any[]) => ({
+        x: point[0],
+        y: [parseFloat(point[1]), parseFloat(point[2]), parseFloat(point[3]), parseFloat(point[4])],
+      }))
+    : [];
+
+  // Process trending coins
+  const marketsData = tickersResult.status === 'fulfilled' ? tickersResult.value : [];
   let trendingCoins: any[] = [];
-  try {
-    const querySymbols = JSON.stringify(SYMBOLS);
-    const response = await fetch(`https://api.binance.us/api/v3/ticker/24hr?symbols=${querySymbols}`, { next: { revalidate: 60 } });
-    if (!response.ok) throw new Error("Failed to fetch ticker from binance.us");
-    const marketsData = await response.json();
-
-    if (Array.isArray(marketsData)) {
-      trendingCoins = marketsData.map((marketCoin: any) => {
-        const meta = COIN_METADATA[marketCoin.symbol];
-        return {
-          item: {
-            id: meta.id,
-            binanceSymbol: marketCoin.symbol,
-            name: meta.name,
-            symbol: marketCoin.symbol.replace('USDT', ''),
-            market_cap_rank: 0,
-            thumb: meta.image,
-            large: meta.image,
-            data: {
-              price: parseFloat(marketCoin.lastPrice),
-              price_change_percentage_24h: { usd: parseFloat(marketCoin.priceChangePercent) }
-            }
-          }
-        };
-      });
-    }
-  } catch (error) {
-    console.error("Failed to fetch trending coins:", error);
+  if (Array.isArray(marketsData)) {
+    trendingCoins = marketsData.map((marketCoin: any) => {
+      const meta = COIN_METADATA[marketCoin.symbol];
+      return {
+        item: {
+          id: meta.id,
+          binanceSymbol: marketCoin.symbol,
+          name: meta.name,
+          symbol: marketCoin.symbol.replace('USDT', ''),
+          market_cap_rank: 0,
+          thumb: meta.image,
+          large: meta.image,
+          data: {
+            price: parseFloat(marketCoin.lastPrice),
+            price_change_percentage_24h: { usd: parseFloat(marketCoin.priceChangePercent) },
+          },
+        },
+      };
+    });
   }
 
-  // Categories Fetching using CoinGecko public unauth endpoint
-  let categories: any[] = [];
-  try {
-    categories = await fetcher<any[]>('/coins/categories');
-  } catch (err) {
-    console.error("Failed to fetch categories:", err);
-  }
+  // Process categories
+  const categories = categoriesResult.status === 'fulfilled' ? (categoriesResult.value ?? []) : [];
 
   const categoryColumns = [
     { header: 'Category', cellClassName: 'category-cell', cell: (category: any) => category.name },
     {
-      header: 'Top Gainers',
+      header: 'Top Coins',
       cellClassName: 'top-gainers-cell flex items-center',
       cell: (category: any) =>
         category.top_3_coins?.map((coin: string) => (
@@ -90,13 +83,16 @@ const page = async () => {
         const change = category.market_cap_change_24h || 0;
         const isTrendingUp = change >= 0;
         return (
-          <div className={cn('change-cell', isTrendingUp ? 'text-green-500' : 'text-red-500')}>
+          <div
+            className={cn('change-cell', isTrendingUp ? 'text-green-500' : 'text-red-500')}
+            aria-label={`${Math.abs(change).toFixed(2)}% ${isTrendingUp ? 'up' : 'down'}`}
+          >
             <p className="flex items-center gap-1">
               {Math.abs(change).toFixed(2)}%
               {isTrendingUp ? (
-                <TrendingUp width={16} height={16} />
+                <TrendingUp width={16} height={16} aria-hidden="true" />
               ) : (
-                <TrendingDown width={16} height={16} />
+                <TrendingDown width={16} height={16} aria-hidden="true" />
               )}
             </p>
           </div>
@@ -106,37 +102,44 @@ const page = async () => {
     {
       header: 'Market Cap',
       cellClassName: 'market-cap-cell',
-      cell: (category: any) => `$${(category.market_cap || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`,
+      cell: (category: any) =>
+        `$${(category.market_cap || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`,
     },
     {
       header: '24h Volume',
       cellClassName: 'volume-cell',
-      cell: (category: any) => `$${(category.volume_24h || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`,
+      cell: (category: any) =>
+        `$${(category.volume_24h || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`,
     },
   ];
 
-  // Pre-fill the top hero coin
-  const btcItem = trendingCoins.find(c => c.item.binanceSymbol === 'BTCUSDT');
-  const coin = btcItem ? {
-    id: btcItem.item.id,
-    binanceSymbol: "BTCUSDT",
-    name: btcItem.item.name,
-    symbol: btcItem.item.symbol,
-    image: { large: btcItem.item.large },
-    market_data: { current_price: { usd: btcItem.item.data.price } }
-  } : {
-    id: "bitcoin", binanceSymbol: "BTCUSDT", name: "Bitcoin", symbol: "BTC", image: { large: COIN_METADATA["BTCUSDT"].image }, market_data: { current_price: { usd: 64000 } }
-  };
+  const btcItem = trendingCoins.find((c) => c.item.binanceSymbol === 'BTCUSDT');
+  const coin = btcItem
+    ? {
+        id: btcItem.item.id,
+        binanceSymbol: 'BTCUSDT',
+        name: btcItem.item.name,
+        symbol: btcItem.item.symbol,
+        image: { large: btcItem.item.large },
+        market_data: { current_price: { usd: btcItem.item.data.price } },
+      }
+    : {
+        id: 'bitcoin',
+        binanceSymbol: 'BTCUSDT',
+        name: 'Bitcoin',
+        symbol: 'BTC',
+        image: { large: COIN_METADATA['BTCUSDT'].image },
+        market_data: { current_price: { usd: 64000 } },
+      };
 
   return (
     <main className="main-container">
       {coin && <DashboardClient coin={coin} ohlcData={ohlcData} trendingCoins={trendingCoins} />}
-      
-      <section className="w-full mt-7 space-y-4">
-        {categories && categories.length > 0 && (
+
+      {categories.length > 0 && (
+        <section className="w-full mt-7 space-y-4" aria-label="Top market categories">
           <div id="categories" className="custom-scrollbar">
             <h4>Top Categories</h4>
-
             <DataTable
               columns={categoryColumns}
               data={categories.slice(0, 10)}
@@ -144,10 +147,10 @@ const page = async () => {
               tableClassName="mt-3 w-full"
             />
           </div>
-        )}
-      </section>
+        </section>
+      )}
     </main>
   );
-}
+};
 
 export default page;

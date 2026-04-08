@@ -51,7 +51,7 @@ export default function DashboardClient({
       cell: (row: any) => {
         const item = row.item;
         return (
-          <Link href={`/coins/${item.id}`} className="flex flex-col gap-1 items-start">
+          <Link href={`/coins/${item.binanceSymbol}`} className="flex flex-col gap-1 items-start">
             <div className="flex items-center gap-1.5 opacity-80 mb-0.5">
               <Image src="/logo.svg" alt="CoinPulse" width={14} height={14} className="w-3.5 h-auto object-contain" />
               <span className="text-[10px] font-semibold text-white tracking-wider">CoinPulse</span>

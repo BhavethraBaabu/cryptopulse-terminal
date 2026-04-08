@@ -180,21 +180,21 @@
     @apply border-b border-dark-400 h-20;
 
     .inner {
-      @apply flex justify-between items-center h-full;
+      @apply flex justify-between items-center h-full gap-2;
 
       a {
         @apply mb-0;
       }
 
       nav {
-        @apply flex h-full items-center;
+        @apply flex h-full items-center flex-1 justify-center;
 
         .nav-link {
-          @apply px-6 py-5 flex items-center transition-all hover:text-white font-medium h-full text-purple-100 cursor-pointer;
+          @apply px-4 py-5 flex items-center transition-all hover:text-white font-medium h-full text-purple-100 cursor-pointer text-sm xl:text-base xl:px-5;
         }
 
         .nav-link.is-active {
-          @apply text-white;
+          @apply text-white border-b-2 border-[#adef37];
         }
 
         .nav-link.is-home {

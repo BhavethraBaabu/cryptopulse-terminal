@@ -51,15 +51,15 @@ export default function LiveTradeFeed({ coinId }: { coinId: string }) { // coinI
   }, [coinId]);
 
   return (
-    <div className="bg-dark-500 rounded-2xl p-6 shadow-xl border border-white/5 h-[400px] flex flex-col xl:h-auto">
+    <div className="bg-dark-500 rounded-2xl p-6 shadow-xl border border-white/5 h-100 flex flex-col xl:h-auto" aria-label="Live trade feed">
       <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-        <Clock className="text-[#adef37] w-5 h-5" />
+        <Clock className="text-[#adef37] w-5 h-5" aria-hidden="true" />
         Live Trade Feed
       </h3>
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2" role="log" aria-live="polite" aria-label="Recent trades">
         <div className="space-y-3">
           {trades.length === 0 ? (
-            <div className="text-center text-gray-400 mt-10">Waiting for live trades...<br/><span className="text-xs opacity-50">(Binance Native Stream)</span></div>
+            <div className="text-center text-gray-400 mt-10" role="status">Waiting for live trades...<br/><span className="text-xs opacity-50">(Binance Native Stream)</span></div>
           ) : (
             trades.map((trade, idx) => (
               <div key={`${trade.timestamp}-${idx}`} className="flex items-center justify-between p-3 rounded-lg bg-dark-400/50 border border-white/5 hover:bg-dark-400/80 transition-colors">
