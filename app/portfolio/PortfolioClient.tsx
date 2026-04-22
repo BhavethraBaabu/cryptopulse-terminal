@@ -17,6 +17,7 @@ interface EnrichedPosition {
   buyDate: Date;
   notes: string;
   currentPrice: number | null;
+  change24h?: number | null;
 }
 
 function fmt(n: number) {
@@ -58,6 +59,32 @@ export default function PortfolioClient({ positions }: { positions: EnrichedPosi
   const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
   const isPortfolioUp = totalPnl >= 0;
 
+  let total24hValueChange = 0;
+  positions.forEach(p => {
+    if (p.currentPrice && p.change24h !== null && p.change24h !== undefined) {
+       const pastDayPrice = p.currentPrice / (1 + (p.change24h / 100));
+       const coinValueYesterday = p.quantity * pastDayPrice;
+       const coinValueToday = p.quantity * p.currentPrice;
+       total24hValueChange += (coinValueToday - coinValueYesterday);
+    }
+  });
+
+  const bestPerformer = positions.length > 0 ? [...positions].sort((a,b) => {
+     const priceA = a.currentPrice ?? a.avgBuyPrice;
+     const priceB = b.currentPrice ?? b.avgBuyPrice;
+     const pnlA = (priceA - a.avgBuyPrice) / a.avgBuyPrice;
+     const pnlB = (priceB - b.avgBuyPrice) / b.avgBuyPrice;
+     return pnlB - pnlA;
+  })[0] : null;
+
+  const worstPerformer = positions.length > 0 ? [...positions].sort((a,b) => {
+     const priceA = a.currentPrice ?? a.avgBuyPrice;
+     const priceB = b.currentPrice ?? b.avgBuyPrice;
+     const pnlA = (priceA - a.avgBuyPrice) / a.avgBuyPrice;
+     const pnlB = (priceB - b.avgBuyPrice) / b.avgBuyPrice;
+     return pnlA - pnlB;
+  })[0] : null;
+
   // Allocation chart data (by current value)
   const chartLabels = positions.map((p) => p.coinName || p.coinSymbol.replace('USDT', ''));
   const chartValues = positions.map((p) => {
@@ -97,6 +124,29 @@ export default function PortfolioClient({ positions }: { positions: EnrichedPosi
           sub={positions.length === 1 ? '1 position' : `${positions.length} positions`}
         />
       </div>
+
+      {positions.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+           <StatCard
+             label="24h Change"
+             value={`${total24hValueChange >= 0 ? '+' : ''}$${fmt(Math.abs(total24hValueChange))}`}
+             sub={totalValue - total24hValueChange > 0 ? fmtPct((total24hValueChange / (totalValue - total24hValueChange)) * 100) : '-'}
+             up={total24hValueChange >= 0}
+           />
+           <StatCard
+             label="Best Performer"
+             value={bestPerformer ? bestPerformer.coinSymbol.replace('USDT', '') : '-'}
+             sub={bestPerformer ? fmtPct(((bestPerformer.currentPrice ?? bestPerformer.avgBuyPrice) - bestPerformer.avgBuyPrice) / bestPerformer.avgBuyPrice * 100) : '-'}
+             up={true}
+           />
+           <StatCard
+             label="Worst Performer"
+             value={worstPerformer ? worstPerformer.coinSymbol.replace('USDT', '') : '-'}
+             sub={worstPerformer ? fmtPct(((worstPerformer.currentPrice ?? worstPerformer.avgBuyPrice) - worstPerformer.avgBuyPrice) / worstPerformer.avgBuyPrice * 100) : '-'}
+             up={false}
+           />
+        </div>
+      )}
 
       {/* ── Chart + Holdings ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-2">

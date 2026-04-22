@@ -19,7 +19,6 @@ const PROTECTED_NAV = [
   { href: '/portfolio', label: 'Portfolio', icon: Wallet },
   { href: '/practice', label: 'Practice', icon: BarChart2 },
   { href: '/alerts', label: 'Alerts' },
-  { href: '/insights', label: 'AI Insights', icon: Sparkles },
 ];
 
 export default function Header() {

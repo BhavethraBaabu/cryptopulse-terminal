@@ -7,8 +7,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")           // pooled connection  (app queries)
+  directUrl = env("DATABASE_URL_UNPOOLED")  // direct connection  (migrations)
 }
 
 // ─── Phase B: Watchlist ───────────────────────────────────────────────────────

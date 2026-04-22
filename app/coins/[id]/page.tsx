@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { auth } from '@clerk/nextjs/server';
-import CandlestickChart from '@/app/components/CandlestickChart';
+import GlassCoinChart from '@/app/components/GlassCoinChart';
 import LiveTradeFeedWrapper from '@/app/components/LiveTradeFeedWrapper';
 import CoinIcon from '@/app/components/CoinIcon';
 import WatchlistButton from '@/app/components/WatchlistButton';
@@ -13,6 +13,7 @@ import { searchCoin, getCoinDetails } from '@/lib/coingecko.actions';
 import { getWatchlistSymbols } from '@/app/actions/watchlist';
 import { TrendingUp, TrendingDown, ArrowUpRight, Globe, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import FadeUp from '@/app/components/FadeUp';
 
 // ─── Formatting helpers ────────────────────────────────────────────────────────
 
@@ -68,16 +69,13 @@ export default async function CoinPage({ params }: { params: Promise<{ id: strin
   const { id } = await params; // e.g. 'BTCUSDT'
   const baseSymbol = id.replace('USDT', '').toLowerCase(); // 'btc'
 
-  // ── Step 1: All independent fetches in parallel ──
-  const [tickerResult, ohlcResult, searchResult, authResult, watchedResult] = await Promise.allSettled([
+ 
+  const [tickerResult, searchResult, authResult, watchedResult] = await Promise.allSettled([
     fetch(`https://api.binance.us/api/v3/ticker/24hr?symbol=${id}`, { next: { revalidate: 60 } }).then((r) => {
       if (r.status === 400 || r.status === 404) return null;
       if (!r.ok) throw new Error(`Binance ticker ${r.status}`);
       return r.json();
     }),
-    fetch(`https://api.binance.us/api/v3/klines?symbol=${id}&interval=1m&limit=60`, {
-      next: { revalidate: 60 },
-    }).then((r) => (r.ok ? r.json() : [])),
     searchCoin(baseSymbol),
     auth(),
     getWatchlistSymbols(),
@@ -88,14 +86,6 @@ export default async function CoinPage({ params }: { params: Promise<{ id: strin
 
   const tickerData = tickerResult.status === 'fulfilled' ? tickerResult.value : null;
   if (!tickerData) return notFound();
-
-  const rawOhlc = ohlcResult.status === 'fulfilled' ? ohlcResult.value : [];
-  const ohlcData: { x: number; y: number[] }[] = Array.isArray(rawOhlc)
-    ? rawOhlc.map((p: any[]) => ({
-        x: p[0],
-        y: [parseFloat(p[1]), parseFloat(p[2]), parseFloat(p[3]), parseFloat(p[4])],
-      }))
-    : [];
 
   // ── Step 2: Resolve CoinGecko ID and fetch details ──
   let coinDetails: any = null;
@@ -141,27 +131,30 @@ export default async function CoinPage({ params }: { params: Promise<{ id: strin
     <main id="coin-details-page" aria-label={`${coinName} market details`}>
       {/* ── Primary: chart + live trades ── */}
       <section className="primary space-y-6" aria-label="Price chart and live trades">
-        <CandlestickChart
-          coinId={id}
-          coinName={coinName}
+        <FadeUp delay={0}>
+        <GlassCoinChart
           coinSymbol={symbolTrimmed}
+          coinName={coinName}
           coinImage={coinImage}
           currentPrice={currentPrice}
-          initialData={ohlcData}
-          className="min-h-125 xl:min-h-162.5"
+          className="min-h-[520px]"
         />
 
-        <div id="coin-header" className="mt-8 mb-6">
-          <h3 className="text-3xl font-medium tracking-tight">On-Chain Trade Feed</h3>
-        </div>
+        </FadeUp>
 
-        <LiveTradeFeedWrapper coinId={baseSymbol} />
+        <FadeUp delay={0.1}>
+          <div id="coin-header" className="mt-8 mb-6">
+            <h3 className="text-3xl font-medium tracking-tight">On-Chain Trade Feed</h3>
+          </div>
+          <LiveTradeFeedWrapper coinId={baseSymbol} />
+        </FadeUp>
       </section>
 
       {/* ── Secondary: all coin info ── */}
       <section className="secondary space-y-6" aria-label="Coin information">
 
         {/* ── Price card ── */}
+        <FadeUp delay={0}>
         <div id="coin-card" role="region" aria-label={`${coinName} price card`}>
           <div className="header">
             <div className="flex items-center gap-4 w-full">
@@ -235,9 +228,11 @@ export default async function CoinPage({ params }: { params: Promise<{ id: strin
             )}
           </div>
         </div>
+        </FadeUp>
 
         {/* ── Market Overview ── */}
         {md && (
+          <FadeUp delay={0.08}>
           <div className="details">
             <h4>Market Overview</h4>
             <ul className="details-grid">
@@ -281,10 +276,12 @@ export default async function CoinPage({ params }: { params: Promise<{ id: strin
               </li>
             </ul>
           </div>
+          </FadeUp>
         )}
 
         {/* ── Supply Info ── */}
         {md && (circulatingSupply || md.total_supply || maxSupply) && (
+          <FadeUp delay={0.13}>
           <div className="details">
             <h4>Supply</h4>
             <ul className="details-grid">
@@ -322,101 +319,110 @@ export default async function CoinPage({ params }: { params: Promise<{ id: strin
               </div>
             )}
           </div>
+          </FadeUp>
         )}
 
         {/* ── ATH / ATL ── */}
         {md?.ath?.usd && (
-          <div className="details">
-            <h4>Price History</h4>
-            <ul className="details-grid">
-              <li>
-                <p className="label">All-Time High</p>
-                <p className="text-base font-semibold text-green-400">{fmtPrice(md.ath.usd)}</p>
-                <PctBadge value={md.ath_change_percentage?.usd} />
-                <p className="text-xs text-gray-500 mt-1">{fmtDate(md.ath_date?.usd)}</p>
-              </li>
-              <li>
-                <p className="label">All-Time Low</p>
-                <p className="text-base font-semibold text-red-400">{fmtPrice(md.atl?.usd)}</p>
-                <PctBadge value={md.atl_change_percentage?.usd} />
-                <p className="text-xs text-gray-500 mt-1">{fmtDate(md.atl_date?.usd)}</p>
-              </li>
-            </ul>
-          </div>
+          <FadeUp delay={0.18}>
+            <div className="details">
+              <h4>Price History</h4>
+              <ul className="details-grid">
+                <li>
+                  <p className="label">All-Time High</p>
+                  <p className="text-base font-semibold text-green-400">{fmtPrice(md.ath.usd)}</p>
+                  <PctBadge value={md.ath_change_percentage?.usd} />
+                  <p className="text-xs text-gray-500 mt-1">{fmtDate(md.ath_date?.usd)}</p>
+                </li>
+                <li>
+                  <p className="label">All-Time Low</p>
+                  <p className="text-base font-semibold text-red-400">{fmtPrice(md.atl?.usd)}</p>
+                  <PctBadge value={md.atl_change_percentage?.usd} />
+                  <p className="text-xs text-gray-500 mt-1">{fmtDate(md.atl_date?.usd)}</p>
+                </li>
+              </ul>
+            </div>
+          </FadeUp>
         )}
 
         {/* ── Links ── */}
         {(homepage || explorers.length > 0 || twitterHandle || subreddit) && (
-          <div className="details">
-            <h4>Links</h4>
-            <ul className="details-grid">
-              {homepage && (
-                <li>
-                  <p className="label">Website</p>
-                  <div className="link">
-                    <Link href={homepage} target="_blank" rel="noopener noreferrer"
-                      className="truncate max-w-40" aria-label={`${coinName} website`}>
-                      <Globe size={14} className="inline mr-1" aria-hidden="true" />
-                      {new URL(homepage).hostname}
-                    </Link>
-                    <ExternalLink size={14} aria-hidden="true" />
-                  </div>
-                </li>
-              )}
-              {explorers.map((url) => (
-                <li key={url}>
-                  <p className="label">Explorer</p>
-                  <div className="link">
-                    <Link href={url} target="_blank" rel="noopener noreferrer"
-                      className="truncate max-w-40" aria-label="Blockchain explorer">
-                      {new URL(url).hostname}
-                    </Link>
-                    <ExternalLink size={14} aria-hidden="true" />
-                  </div>
-                </li>
-              ))}
-              {twitterHandle && (
-                <li>
-                  <p className="label">Twitter / X</p>
-                  <div className="link">
-                    <Link href={`https://twitter.com/${twitterHandle}`} target="_blank" rel="noopener noreferrer"
-                      aria-label={`${coinName} Twitter`}>
-                      @{twitterHandle}
-                    </Link>
-                    <ExternalLink size={14} aria-hidden="true" />
-                  </div>
-                </li>
-              )}
-              {subreddit && (
-                <li>
-                  <p className="label">Reddit</p>
-                  <div className="link">
-                    <Link href={subreddit} target="_blank" rel="noopener noreferrer"
-                      aria-label={`${coinName} Reddit`}>
-                      {subreddit.replace('https://www.reddit.com/', '').replace(/\/$/, '')}
-                    </Link>
-                    <ExternalLink size={14} aria-hidden="true" />
-                  </div>
-                </li>
-              )}
-            </ul>
-          </div>
+          <FadeUp delay={0.22}>
+            <div className="details">
+              <h4>Links</h4>
+              <ul className="details-grid">
+                {homepage && (
+                  <li>
+                    <p className="label">Website</p>
+                    <div className="link">
+                      <Link href={homepage} target="_blank" rel="noopener noreferrer"
+                        className="truncate max-w-40" aria-label={`${coinName} website`}>
+                        <Globe size={14} className="inline mr-1" aria-hidden="true" />
+                        {new URL(homepage).hostname}
+                      </Link>
+                      <ExternalLink size={14} aria-hidden="true" />
+                    </div>
+                  </li>
+                )}
+                {explorers.map((url) => (
+                  <li key={url}>
+                    <p className="label">Explorer</p>
+                    <div className="link">
+                      <Link href={url} target="_blank" rel="noopener noreferrer"
+                        className="truncate max-w-40" aria-label="Blockchain explorer">
+                        {new URL(url).hostname}
+                      </Link>
+                      <ExternalLink size={14} aria-hidden="true" />
+                    </div>
+                  </li>
+                ))}
+                {twitterHandle && (
+                  <li>
+                    <p className="label">Twitter / X</p>
+                    <div className="link">
+                      <Link href={`https://twitter.com/${twitterHandle}`} target="_blank" rel="noopener noreferrer"
+                        aria-label={`${coinName} Twitter`}>
+                        @{twitterHandle}
+                      </Link>
+                      <ExternalLink size={14} aria-hidden="true" />
+                    </div>
+                  </li>
+                )}
+                {subreddit && (
+                  <li>
+                    <p className="label">Reddit</p>
+                    <div className="link">
+                      <Link href={subreddit} target="_blank" rel="noopener noreferrer"
+                        aria-label={`${coinName} Reddit`}>
+                        {subreddit.replace('https://www.reddit.com/', '').replace(/\/$/, '')}
+                      </Link>
+                      <ExternalLink size={14} aria-hidden="true" />
+                    </div>
+                  </li>
+                )}
+              </ul>
+            </div>
+          </FadeUp>
         )}
 
         {/* ── Set Price Alert ── */}
-        <AddAlertForm
-          coinSymbol={id}
-          coinName={coinName}
-          currentPrice={currentPrice}
-          isSignedIn={!!userId}
-        />
+        <FadeUp delay={0.26}>
+          <AddAlertForm
+            coinSymbol={id}
+            coinName={coinName}
+            currentPrice={currentPrice}
+            isSignedIn={!!userId}
+          />
+        </FadeUp>
 
         {/* ── About (expandable description) ── */}
         {coinDetails?.description?.en && (
-          <CoinDescription
-            description={coinDetails.description.en}
-            coinName={coinName}
-          />
+          <FadeUp delay={0.3}>
+            <CoinDescription
+              description={coinDetails.description.en}
+              coinName={coinName}
+            />
+          </FadeUp>
         )}
       </section>
     </main>

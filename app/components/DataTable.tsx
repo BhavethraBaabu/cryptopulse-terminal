@@ -7,6 +7,21 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import AnimatedTableRow from './AnimatedTableRow';
+import React from 'react';
+
+// Assuming DataTableProps is somewhere in global types or imported
+interface DataTableProps<T> {
+    columns: any[];
+    data: T[];
+    rowKey: (row: T, index: number) => string;
+    tableClassName?: string;
+    headerClassName?: string;
+    headerRowClassName?: string;
+    headerCellClassName?: string;
+    bodyRowClassName?: string;
+    bodyCellClassName?: string;
+}
 
 const DataTable = <T,>({
     columns,
@@ -39,10 +54,11 @@ const DataTable = <T,>({
             </TableHeader>
             <TableBody>
                 {data.map((row, rowIndex) => (
-                    <TableRow
+                    <AnimatedTableRow
                         key={rowKey(row, rowIndex)}
+                        delay={rowIndex * 0.05 + 0.1}
                         className={cn(
-                            'overflow-hidden rounded-lg border-b border-purple-100/5 hover:bg-dark-400/30! relative',
+                            'overflow-hidden rounded-lg border-purple-100/5 hover:bg-dark-400/30! relative translate-y-0',
                             bodyRowClassName,
                         )}
                     >
@@ -54,7 +70,7 @@ const DataTable = <T,>({
                                 {column.cell(row, rowIndex)}
                             </TableCell>
                         ))}
-                    </TableRow>
+                    </AnimatedTableRow>
                 ))}
             </TableBody>
         </Table>

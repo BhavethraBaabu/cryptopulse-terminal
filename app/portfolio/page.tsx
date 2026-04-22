@@ -10,24 +10,25 @@ export default async function PortfolioPage() {
 
   const positions = await getPositions();
 
-  // Batch-fetch live prices for all held coins in one Binance request
-  type TickerMap = Record<string, number>;
+  // Batch-fetch live prices and 24h changes for all held coins in one Binance request
+  type TickerData = { price: number; change24h: number };
+  type TickerMap = Record<string, TickerData>;
   let priceMap: TickerMap = {};
 
   if (positions.length > 0) {
     try {
       const symbols = JSON.stringify([...new Set(positions.map((p) => p.coinSymbol))]);
       const res = await fetch(
-        `https://api.binance.us/api/v3/ticker/price?symbols=${symbols}`,
+        `https://api.binance.us/api/v3/ticker/24hr?symbols=${symbols}`,
         { next: { revalidate: 30 } },
       );
       if (res.ok) {
         const tickers = await res.json();
         if (Array.isArray(tickers)) {
           priceMap = Object.fromEntries(
-            tickers.map((t: { symbol: string; price: string }) => [
+            tickers.map((t: { symbol: string; lastPrice: string; priceChangePercent: string }) => [
               t.symbol,
-              parseFloat(t.price),
+              { price: parseFloat(t.lastPrice), change24h: parseFloat(t.priceChangePercent) },
             ]),
           );
         }
@@ -38,7 +39,8 @@ export default async function PortfolioPage() {
   // Merge positions with live prices
   const enriched = positions.map((p) => ({
     ...p,
-    currentPrice: priceMap[p.coinSymbol] ?? null,
+    currentPrice: priceMap[p.coinSymbol]?.price ?? null,
+    change24h: priceMap[p.coinSymbol]?.change24h ?? null,
   }));
 
   return (

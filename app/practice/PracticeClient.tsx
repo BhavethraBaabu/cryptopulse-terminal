@@ -195,6 +195,8 @@ export default function PracticeClient({
         <aside className="bg-dark-500 rounded-xl border border-white/5 p-4 md:p-5 space-y-4">
           <h3 className="text-lg font-semibold">Place Order</h3>
 
+
+
           <div className="space-y-1">
             <label htmlFor="coin" className="text-xs uppercase tracking-wide text-gray-400">Coin</label>
             <select

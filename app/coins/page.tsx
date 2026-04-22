@@ -6,6 +6,7 @@ import { TrendingUp, TrendingDown, ChevronLeft, ChevronRight } from 'lucide-reac
 import DataTable from '@/app/components/DataTable';
 import CoinIcon from '@/app/components/CoinIcon';
 import WatchlistButton from '@/app/components/WatchlistButton';
+import FadeUp from '@/app/components/FadeUp';
 import CoinsFilter from './CoinsFilter';
 import { getWatchlistSymbols } from '@/app/actions/watchlist';
 
@@ -211,12 +212,14 @@ export default async function AllCoinsPage({
 
         {/* Table */}
         {!fetchError && paginatedData.length > 0 && (
-          <DataTable
-            tableClassName="coins-table"
-            columns={columns}
-            data={paginatedData}
-            rowKey={(row: any) => row.symbol}
-          />
+          <FadeUp>
+            <DataTable
+              tableClassName="coins-table"
+              columns={columns}
+              data={paginatedData}
+              rowKey={(row: any) => row.symbol}
+            />
+          </FadeUp>
         )}
 
         {/* Pagination */}
