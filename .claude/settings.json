@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(curl -s --max-time 5 \"https://api.binance.us/api/v3/ticker/24hr\" -o /dev/null -w \"%{http_code}\")"
+    ]
+  }
+}

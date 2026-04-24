@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma:*)",
+      "Bash(mkdir -p \"c:\\\\Users\\\\suman\\\\Desktop\\\\Capstone Project\\\\coinpulse\\\\app\\\\\\(auth\\)\\\\sign-in\\\\[[...sign-in]]\")",
+      "Bash(mkdir -p \"c:\\\\Users\\\\suman\\\\Desktop\\\\Capstone Project\\\\coinpulse\\\\app\\\\\\(auth\\)\\\\sign-up\\\\[[...sign-up]]\")",
+      "Bash(npm list:*)",
+      "Bash(node -e \"const m = require\\('c:/Users/suman/Desktop/Capstone Project/coinpulse/node_modules/@clerk/nextjs'\\); console.log\\(Object.keys\\(m\\).filter\\(k => k.toLowerCase\\(\\).includes\\('sign'\\) || k.toLowerCase\\(\\).includes\\('user'\\) || k.toLowerCase\\(\\).includes\\('clerk'\\)\\)\\)\")",
+      "Bash(node -e \"const e = require\\('./node_modules/@clerk/nextjs/dist/cjs/index.js'\\); console.log\\(Object.keys\\(e\\).filter\\(k => /sign|user|clerk/i.test\\(k\\)\\)\\)\")",
+      "Bash(node -e \"const e = require\\('./node_modules/@clerk/nextjs/dist/cjs/index.js'\\); console.log\\(Object.keys\\(e\\).filter\\(k => /provider|auth/i.test\\(k\\)\\)\\)\")",
+      "Bash(node -e \"try { const e = require\\('./node_modules/@clerk/nextjs/dist/cjs/server.js'\\); console.log\\(Object.keys\\(e\\).filter\\(k => /auth|user|current/i.test\\(k\\)\\)\\); } catch\\(e\\) { console.log\\(e.message\\); }\")",
+      "Bash(node -e \"const e = require\\('./node_modules/@clerk/nextjs/dist/server'\\); console.log\\(Object.keys\\(e\\).filter\\(k => /auth|user|current|protect/i.test\\(k\\)\\)\\)\")",
+      "Bash(node -e \"const pkg = require\\('./node_modules/@clerk/nextjs/package.json'\\); console.log\\(JSON.stringify\\(pkg.exports, null, 2\\)\\)\")",
+      "Bash(node -e \"const e = require\\('./node_modules/@clerk/nextjs/dist/cjs/server/index.js'\\); console.log\\(Object.keys\\(e\\).filter\\(k => /auth|user|current|protect|middle/i.test\\(k\\)\\)\\)\")",
+      "Bash(node -e \"const e = require\\('./node_modules/@clerk/nextjs/dist/cjs/server/index.js'\\); console.log\\(Object.keys\\(e\\)\\)\")",
+      "Bash(npx next:*)"
+    ]
+  }
+}
