@@ -2,7 +2,7 @@
 // Phase B: Watchlist  |  Phase C: Portfolio  |  Phase D: Alerts  |  Phase G: Paper Trading
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
 }
 
